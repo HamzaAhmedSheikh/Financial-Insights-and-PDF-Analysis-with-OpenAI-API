@@ -11,6 +11,7 @@ from openai.types.beta.thread import Thread
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
 
+
 # Load the API key from the .env file
 load_dotenv(find_dotenv())
 
