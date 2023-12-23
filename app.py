@@ -66,5 +66,20 @@ def pretty_print(messages):
     return "\n".join(responses)
 
 
+# Streamlit UI for sidebar configuration
+st.sidebar.title("Configuration")
+entered_api_key = st.sidebar.text_input("Enter your OpenAI API key", type="password")
 
+# Check if an API key is entered, then initialize the OpenAI client
+client = None
+
+if entered_api_key:
+    with st.spinner('Initializing OpenAI Client...'):
+        client = initialize_openai_client(entered_api_key)
+
+# Sidebar for selecting the assistant
+assistant_option = st.sidebar.selectbox(
+    "Select an Assistant",
+    ("Financial Assistant", "PDF Analyzer")
+)
 
