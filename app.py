@@ -83,3 +83,32 @@ assistant_option = st.sidebar.selectbox(
     ("Financial Assistant", "PDF Analyzer")
 )
 
+
+if assistant_option == "Financial Assistant":
+    st.title("Financial Assistants :bar_chart:")
+
+    # Description
+    st.markdown("""
+        This assistant is your go-to resource for financial insights and advice. Here's what you can do:
+        - :page_facing_up: **Analyze financial statements** to understand your company's health.
+        - :chart_with_upwards_trend: **Track market trends** and make informed investment decisions.
+        - :moneybag: Receive tailored **investment advice** to maximize your portfolio's performance.
+        - :bulb: **Explore various financial scenarios** and plan strategically for future ventures.
+
+        Simply enter your financial query below and let the assistant guide you with actionable insights.
+    """)
+
+    user_query = st.text_input("Enter your financial query:")
+
+    if st.button('Get Financial Insight') and client:
+        with st.spinner('Fetching your financial insights...'):
+            thread = client.beta.threads.create()
+            run = submit_message(assistant.id, thread, user_query)
+            run = wait_on_run(run, thread)
+            response_messages = get_response(thread)
+            response = pretty_print(response_messages)
+            st.text_area("Response:", value=response, height=300)
+
+# Show a message if the API key is not entered
+if not client:
+    st.warning("Please enter your OpenAI API key in the sidebar to use the app.")
