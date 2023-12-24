@@ -21,7 +21,7 @@ from openai.types.beta.thread import Thread
 load_dotenv(find_dotenv())
 
 # Get the OpenAI API key from the environment variable
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
