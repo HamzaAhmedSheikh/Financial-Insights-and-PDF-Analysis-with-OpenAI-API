@@ -18,10 +18,10 @@ To get started with this project, you need to have Python installed on your syst
 
 ```bash
 pip install -r requirements.txt
+```
 
-#### Then, you can run the main script to start analyzing your data:
-
+Then, you can run the main script to start analyzing your data:
 ```bash
 streamlit run main.py
-
+```
 
