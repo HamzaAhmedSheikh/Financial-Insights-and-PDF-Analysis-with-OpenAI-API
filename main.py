@@ -2,6 +2,7 @@ import os
 import time
 import json
 import openai
+from dotenv import load_dotenv, find_dotenv
 import streamlit as st
 
 from openai.types.beta import Assistant
@@ -10,9 +11,10 @@ from openai.types.beta.thread import Thread
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
 
-api_key = os.getenv("OPENAI_API_KEY")
+# api_key = os.getenv("OPENAI_API_KEY")
+_: bool = load_dotenv(find_dotenv())
 
-client: openai.OpenAI = openai.OpenAI(api_key = api_key)
+client: openai.OpenAI = openai.OpenAI()
 
 assistant: Assistant = client.beta.assistants.create(
     name = "Finance Insight Analyst",
