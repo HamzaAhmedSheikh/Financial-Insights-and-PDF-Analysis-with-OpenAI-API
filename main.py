@@ -20,18 +20,23 @@ from openai.types.beta.thread import Thread
 # Load environment variables from the .env file
 load_dotenv(find_dotenv())
 
-# Get the OpenAI API key from the environment variable
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# Load the OpenAI API key from secrets.toml
+api_key = st.secrets["OPENAI_API_KEY"]
 
-def initialize_openai_client(api_key):
+
+# Get the OpenAI API key from the environment variable
+# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+def initialize_openai_client(api_key):    
     return openai.OpenAI(api_key=api_key)
 
 # Check if the API key is present
-if not OPENAI_API_KEY:
-    raise ValueError("The OPENAI_API_KEY environment variable is not set.")
+# if not OPENAI_API_KEY:
+#     raise ValueError("The OPENAI_API_KEY environment variable is not set.")
 
 # Initialize the OpenAI client using the API key
-client: openai.OpenAI = openai.OpenAI(api_key=OPENAI_API_KEY)
+client: openai.OpenAI = openai.OpenAI(api_key=api_key)
+
 
 
 assistant: Assistant = client.beta.assistants.create(
