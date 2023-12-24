@@ -1,6 +1,5 @@
 import os
 import time
-from dotenv import load_dotenv, find_dotenv
 import json
 import openai
 import streamlit as st
@@ -10,9 +9,6 @@ from openai.types.beta.thread import Thread
 
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
-
-# Load the API key from the .env file
-load_dotenv(find_dotenv())
 
 api_key = os.getenv("OPENAI_API_KEY")
 
