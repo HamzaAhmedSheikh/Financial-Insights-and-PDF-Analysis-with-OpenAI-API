@@ -1,10 +1,10 @@
 # Financial Insights and PDF Analysis with OpenAI API
 
-This project utilizes the power of OpenAI's API to extract financial insights and analyze PDF documents[^1^][1].
+This project utilizes the power of OpenAI's API to extract financial insights and analyze PDF documents.
 
 ## Overview
 
-The project aims to provide a comprehensive analysis of financial data and PDF documents using OpenAI's advanced AI models[^1^][1]. It is designed to help financial analysts, data scientists, and anyone interested in financial data analysis.
+The project aims to provide a comprehensive analysis of financial data and PDF documents using OpenAI's advanced AI models. It is designed to help financial analysts, data scientists, and anyone interested in financial data analysis.
 
 ## Features
 
