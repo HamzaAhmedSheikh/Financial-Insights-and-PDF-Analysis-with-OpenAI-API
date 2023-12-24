@@ -7,15 +7,32 @@ import streamlit as st
 from openai.types.beta import Assistant
 from openai.types.beta.thread import Thread
 
-_: bool = load_dotenv(find_dotenv())
+# _: bool = load_dotenv(find_dotenv())
 
+# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+
+# def initialize_openai_client(api_key):
+#     return openai.OpenAI(api_key=api_key)
+
+# client: openai.OpenAI = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+# Load environment variables from the .env file
+load_dotenv(find_dotenv())
+
+# Get the OpenAI API key from the environment variable
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
 
+# Check if the API key is present
+if not OPENAI_API_KEY:
+    raise ValueError("The OPENAI_API_KEY environment variable is not set.")
+
+# Initialize the OpenAI client using the API key
 client: openai.OpenAI = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 assistant: Assistant = client.beta.assistants.create(
     name = "Finance Insight Analyst",
