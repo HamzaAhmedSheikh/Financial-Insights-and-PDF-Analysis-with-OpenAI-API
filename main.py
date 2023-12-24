@@ -20,6 +20,7 @@ from openai.types.beta.thread import Thread
 # Load environment variables from the .env file
 load_dotenv(find_dotenv())
 
+os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 # Load the OpenAI API key from secrets.toml
 api_key = st.secrets["OPENAI_API_KEY"]
 
