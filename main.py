@@ -9,13 +9,13 @@ from openai.types.beta.thread import Thread
 
 _: bool = load_dotenv(find_dotenv())
 
-api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
 
-client: openai.OpenAI = openai.OpenAI(api_key=api_key)
+client: openai.OpenAI = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 assistant: Assistant = client.beta.assistants.create(
     name = "Finance Insight Analyst",
