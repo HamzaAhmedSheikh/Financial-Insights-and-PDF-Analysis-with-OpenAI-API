@@ -7,10 +7,10 @@ import streamlit as st
 from openai.types.beta import Assistant
 from openai.types.beta.thread import Thread
 
+_: bool = load_dotenv(find_dotenv())
+
 def initialize_openai_client(api_key):
     return openai.OpenAI(api_key=api_key)
-
-_: bool = load_dotenv(find_dotenv())
 
 client: openai.OpenAI = openai.OpenAI()
 
