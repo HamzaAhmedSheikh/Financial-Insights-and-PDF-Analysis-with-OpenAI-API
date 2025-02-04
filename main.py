@@ -35,14 +35,22 @@ def initialize_openai_client(api_key):
 # Initialize the OpenAI client using the API key
 client: openai.OpenAI = openai.OpenAI(api_key=api_key)
 
+def create_financial_assistant(client):
+    """Create a financial assistant and return its ID"""
+    assistant = client.beta.assistants.create(
+        name="Finance Insight Analyst",
+        instructions="You are a helpful financial analyst expert and, focusing on management discussions and financial results. help people learn about financial needs and guide them towards financial literacy.",
+        tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
+        model="gpt-3.5-turbo-1106"
+    )
+    return assistant
 
+# Move assistant creation into the main flow
+if 'financial_assistant' not in st.session_state:
+    st.session_state.financial_assistant = create_financial_assistant(client)
 
-assistant: Assistant = client.beta.assistants.create(
-    name = "Finance Insight Analyst",
-    instructions = "You are a helpful financial analyst expert and, focusing on management discussions and financial results. help people learn about financial needs and guide them towards fincial literacy.",
-    tools = [{"type": "code_interpreter"}, {"type": "file_search"}],
-    model = "gpt-3.5-turbo-1106"
-)
+# Use the stored assistant instead of creating a new one
+assistant = st.session_state.financial_assistant
 
 def show_json(obj):
     print(json.dumps(json.loads(obj.model_dump_json()), indent=4))
@@ -50,7 +58,10 @@ def show_json(obj):
 show_json(assistant)
 
 # Creating a Thread for Conversation
-thread: Thread = client.beta.threads.create()
+if 'thread' not in st.session_state:
+    st.session_state.thread = client.beta.threads.create()
+
+thread = st.session_state.thread
 
 # Submitting User Message
 def submit_message(assistant_id, thread, user_message):
@@ -121,7 +132,6 @@ if assistant_option == "Financial Assistant":
 
     if st.button('Get Financial Insight') and client:
         with st.spinner('Fetching your financial insights...'):
-            thread = client.beta.threads.create()
             run = submit_message(assistant.id, thread, user_query)
             run = wait_on_run(run, thread)
             response_messages = get_response(thread)
@@ -157,12 +167,6 @@ elif assistant_option == "PDF Analyzer":
                 f.write(uploaded_file.getbuffer())
 
             try:
-                # Extract images from PDF
-                # images_dict = extract_images_from_pdf(temp_file_path)
-                
-                # Store images_dict in session state
-                # st.session_state['pdf_images'] = images_dict
-
                 file_response = client.files.create(
                     file=open(temp_file_path, "rb"),
                     purpose="assistants",
@@ -170,17 +174,22 @@ elif assistant_option == "PDF Analyzer":
 
                 file_id = file_response.id
 
-                # Create a new assistant specifically for PDF analysis
-                pdf_assistant = client.beta.assistants.create(
-                    name="PDF Analyzer",
-                    instructions="""You are a helpful assistant that analyzes PDF documents and answers questions about their content. 
-                    When users ask about images, you can reference them using their IDs (image_page_index format) and describe their context. 
-                    If a user asks to see an image, respond with the exact image ID in format: 'SHOW_IMAGE:image_page_index'""",
-                    tools=[{"type": "file_search"}, {"type": "code_interpreter"}],
-                    model="gpt-3.5-turbo-1106",
-                )
+                # Create PDF assistant only if it doesn't exist
+                if 'pdf_assistant' not in st.session_state:
+                    pdf_assistant = client.beta.assistants.create(
+                        name="PDF Analyzer",
+                        instructions="""You are a helpful assistant that analyzes PDF documents and answers questions about their content. 
+                        When users ask about images, you can reference them using their IDs (image_page_index format) and describe their context. 
+                        If a user asks to see an image, respond with the exact image ID in format: 'SHOW_IMAGE:image_page_index'""",
+                        tools=[{"type": "file_search"}, {"type": "code_interpreter"}],
+                        model="gpt-3.5-turbo-1106",
+                    )
+                    st.session_state.pdf_assistant = pdf_assistant
+                else:
+                    pdf_assistant = st.session_state.pdf_assistant
 
-                vector_store = client.beta.vector_stores.create(name="PDF Analyzer")                                                
+                # Create vector store
+                vector_store = client.beta.vector_stores.create(name="PDF Analyzer")
 
                 # Ready the files for upload to OpenAI
                 file_paths = [temp_file_path]
@@ -225,3 +234,19 @@ elif assistant_option == "PDF Analyzer":
 # Show a message if the API key is not entered 
     if not client:
       st.warning("Please enter your OpenAI API key in the sidebar to use the app.")
+
+# Add this to your sidebar
+if st.sidebar.button("Reset Assistants"):
+    if 'financial_assistant' in st.session_state:
+        try:
+            client.beta.assistants.delete(st.session_state.financial_assistant.id)
+        except:
+            pass
+        del st.session_state.financial_assistant
+    if 'pdf_assistant' in st.session_state:
+        try:
+            client.beta.assistants.delete(st.session_state.pdf_assistant.id)
+        except:
+            pass
+        del st.session_state.pdf_assistant
+    st.sidebar.success("Assistants reset successfully!")
