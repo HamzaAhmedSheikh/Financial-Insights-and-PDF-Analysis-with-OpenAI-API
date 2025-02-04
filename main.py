@@ -6,51 +6,14 @@ from dotenv import load_dotenv, find_dotenv
 import streamlit as st
 from openai.types.beta import Assistant
 from openai.types.beta.thread import Thread
-import fitz  # PyMuPDF
 import base64
 from PIL import Image
 import io
 
-def extract_images_from_pdf(pdf_path):
-    """Extract images from PDF and return a dictionary of images with their descriptions/captions."""
-    images_dict = {}
-    doc = fitz.open(pdf_path)
-    
-    for page_num in range(len(doc)):
-        page = doc[page_num]
-        image_list = page.get_images()
-        
-        for img_index, img in enumerate(image_list):
-            xref = img[0]
-            base_image = doc.extract_image(xref)
-            image_bytes = base_image["image"]
-            
-            # Convert image bytes to PIL Image
-            image = Image.open(io.BytesIO(image_bytes))
-            
-            # Convert PIL Image to base64 string
-            buffered = io.BytesIO()
-            image.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
-            
-            # Get surrounding text (100 characters before and after the image)
-            text_before = page.get_text("text")[:100]
-            text_after = page.get_text("text")[-100:]
-            
-            # Store image with context
-            images_dict[f"image_{page_num}_{img_index}"] = {
-                "base64": img_str,
-                "context": f"{text_before}...{text_after}",
-                "page": page_num + 1
-            }
-    
-    doc.close()
-    return images_dict
 
-def display_image_in_streamlit(base64_img):
-    """Display a base64 encoded image in Streamlit."""
-    st.image(base64.b64decode(base64_img), use_column_width=True)
-    
+
+
+
 # Load environment variables from the .env file
 load_dotenv(find_dotenv())
 
@@ -195,10 +158,10 @@ elif assistant_option == "PDF Analyzer":
 
             try:
                 # Extract images from PDF
-                images_dict = extract_images_from_pdf(temp_file_path)
+                # images_dict = extract_images_from_pdf(temp_file_path)
                 
                 # Store images_dict in session state
-                st.session_state['pdf_images'] = images_dict
+                # st.session_state['pdf_images'] = images_dict
 
                 file_response = client.files.create(
                     file=open(temp_file_path, "rb"),
@@ -250,7 +213,7 @@ elif assistant_option == "PDF Analyzer":
                     image_id = response.split("SHOW_IMAGE:")[1].split()[0]
                     if image_id in st.session_state['pdf_images']:
                         st.write("Here's the image you requested:")
-                        display_image_in_streamlit(st.session_state['pdf_images'][image_id]["base64"])
+                        # display_image_in_streamlit(st.session_state['pdf_images'][image_id]["base64"])
                         st.write(f"Context: {st.session_state['pdf_images'][image_id]['context']}")
                     else:
                         st.write("Sorry, I couldn't find that specific image.")
