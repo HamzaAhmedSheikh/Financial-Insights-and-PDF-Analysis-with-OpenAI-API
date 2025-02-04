@@ -6,6 +6,50 @@ from dotenv import load_dotenv, find_dotenv
 import streamlit as st
 from openai.types.beta import Assistant
 from openai.types.beta.thread import Thread
+import fitz  # PyMuPDF
+import base64
+from PIL import Image
+import io
+
+def extract_images_from_pdf(pdf_path):
+    """Extract images from PDF and return a dictionary of images with their descriptions/captions."""
+    images_dict = {}
+    doc = fitz.open(pdf_path)
+    
+    for page_num in range(len(doc)):
+        page = doc[page_num]
+        image_list = page.get_images()
+        
+        for img_index, img in enumerate(image_list):
+            xref = img[0]
+            base_image = doc.extract_image(xref)
+            image_bytes = base_image["image"]
+            
+            # Convert image bytes to PIL Image
+            image = Image.open(io.BytesIO(image_bytes))
+            
+            # Convert PIL Image to base64 string
+            buffered = io.BytesIO()
+            image.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            
+            # Get surrounding text (100 characters before and after the image)
+            text_before = page.get_text("text")[:100]
+            text_after = page.get_text("text")[-100:]
+            
+            # Store image with context
+            images_dict[f"image_{page_num}_{img_index}"] = {
+                "base64": img_str,
+                "context": f"{text_before}...{text_after}",
+                "page": page_num + 1
+            }
+    
+    doc.close()
+    return images_dict
+
+def display_image_in_streamlit(base64_img):
+    """Display a base64 encoded image in Streamlit."""
+    st.image(base64.b64decode(base64_img), use_column_width=True)
 
 # _: bool = load_dotenv(find_dotenv())
 
@@ -43,7 +87,7 @@ client: openai.OpenAI = openai.OpenAI(api_key=api_key)
 assistant: Assistant = client.beta.assistants.create(
     name = "Finance Insight Analyst",
     instructions = "You are a helpful financial analyst expert and, focusing on management discussions and financial results. help people learn about financial needs and guid them towards fincial literacy.",
-    tools = [{"type":"code_interpreter"}, {"type": "retrieval"}],
+    tools = [{"type": "code_interpreter"}, {"type": "file_search"}],
     model = "gpt-3.5-turbo-1106"
 )
 
@@ -160,23 +204,71 @@ elif assistant_option == "PDF Analyzer":
                 f.write(uploaded_file.getbuffer())
 
             try:
+                # Extract images from PDF
+                images_dict = extract_images_from_pdf(temp_file_path)
+                
+                # Store images_dict in session state
+                st.session_state['pdf_images'] = images_dict
+
                 file_response = client.files.create(
                     file=open(temp_file_path, "rb"),
                     purpose="assistants",
                 )
-                assistant = client.beta.assistants.update(
-                    assistant_id= assistant.id,
-                    file_ids=[file_response.id],
+
+                file_id = file_response.id
+
+                # Create a new assistant specifically for PDF analysis
+                pdf_assistant = client.beta.assistants.create(
+                    name="PDF Analyzer",
+                    instructions="""You are a helpful assistant that analyzes PDF documents and answers questions about their content. 
+                    When users ask about images, you can reference them using their IDs (image_page_index format) and describe their context. 
+                    If a user asks to see an image, respond with the exact image ID in format: 'SHOW_IMAGE:image_page_index'""",
+                    tools=[{"type": "file_search"}, {"type": "code_interpreter"}],
+                    model="gpt-3.5-turbo-1106",
                 )
+
+                vector_store = client.beta.vector_stores.create(name="PDF Analyzer")                                                
+
+                # Ready the files for upload to OpenAI
+                file_paths = [temp_file_path]
+                file_streams = [open(path, "rb") for path in file_paths]
+
+                # Use the upload and poll SDK helper to upload the files, add them to the vector store,
+                # and poll the status of the file batch for completion.
+                file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
+                   vector_store_id=vector_store.id, files=file_streams
+                )
+
+                # You can print the status and the file counts of the batch to see the result of this operation.
+                print(file_batch.status)
+                print(file_batch.file_counts)               
+                
+
+                pdf_assistant = client.beta.assistants.update(
+                    assistant_id=pdf_assistant.id,
+                    tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+                )
+
                 thread = client.beta.threads.create()
-                run = submit_message(assistant.id, thread, user_query)
+                run = submit_message(pdf_assistant.id, thread, user_query)
                 run = wait_on_run(run, thread)
                 response_messages = get_response(thread)
                 response = pretty_print(response_messages)
+                
+                # Check if response contains image display request
+                if "SHOW_IMAGE:" in response:
+                    image_id = response.split("SHOW_IMAGE:")[1].split()[0]
+                    if image_id in st.session_state['pdf_images']:
+                        st.write("Here's the image you requested:")
+                        display_image_in_streamlit(st.session_state['pdf_images'][image_id]["base64"])
+                        st.write(f"Context: {st.session_state['pdf_images'][image_id]['context']}")
+                    else:
+                        st.write("Sorry, I couldn't find that specific image.")
+                
                 st.text_area("Response:", value=response, height=300)
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 
-# Show a message if the API key is not entered
-if not client:
-    st.warning("Please enter your OpenAI API key in the sidebar to use the app.")
+# Show a message if the API key is not entered 
+    if not client:
+      st.warning("Please enter your OpenAI API key in the sidebar to use the app.")
