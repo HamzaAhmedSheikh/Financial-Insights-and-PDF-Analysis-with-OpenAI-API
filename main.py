@@ -39,7 +39,7 @@ client: openai.OpenAI = openai.OpenAI(api_key=api_key)
 
 assistant: Assistant = client.beta.assistants.create(
     name = "Finance Insight Analyst",
-    instructions = "You are a helpful financial analyst expert and, focusing on management discussions and financial results. help people learn about financial needs and guid them towards fincial literacy.",
+    instructions = "You are a helpful financial analyst expert and, focusing on management discussions and financial results. help people learn about financial needs and guide them towards fincial literacy.",
     tools = [{"type": "code_interpreter"}, {"type": "file_search"}],
     model = "gpt-3.5-turbo-1106"
 )
