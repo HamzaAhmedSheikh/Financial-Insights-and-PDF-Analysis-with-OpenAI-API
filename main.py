@@ -50,17 +50,7 @@ def extract_images_from_pdf(pdf_path):
 def display_image_in_streamlit(base64_img):
     """Display a base64 encoded image in Streamlit."""
     st.image(base64.b64decode(base64_img), use_column_width=True)
-
-# _: bool = load_dotenv(find_dotenv())
-
-# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-
-# def initialize_openai_client(api_key):
-#     return openai.OpenAI(api_key=api_key)
-
-# client: openai.OpenAI = openai.OpenAI(api_key=OPENAI_API_KEY)
-
+    
 # Load environment variables from the .env file
 load_dotenv(find_dotenv())
 
